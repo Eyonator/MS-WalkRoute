@@ -16,16 +16,16 @@ using UnityEngine.SceneManagement;
 namespace WalkRoute
 {
     /// <summary>
-    /// Walk Route (Looproute): onzichtbare verplichte looprichting voor klanten en personeel, gebouwd zoals het klaphekje van het
-    /// spel dat doet, maar zonder hek, animatie en geluid. Een streep op de vloer sluit de doorgang op de NavMesh af (carving
-    /// NavMeshObstacle) en een eenrichtings-NavMeshLink dwars door de streep is de enige weg erdoor. Zichtbaar is alleen een
-    /// bijna doorzichtige pijl op de vloer, zodat je de route kunt terugvinden en oppakken. Bedoeld voor kassaroutes: klanten
-    /// lopen dan niet meer tegen de richting in langs de kassa.
+    /// Walk Route: invisible mandatory walking direction for customers and staff, built the way the game's entrance gate does
+    /// it, but without the gate, animation and sound. A line on the floor closes the passage on the NavMesh (carving
+    /// NavMeshObstacle) and a one-way NavMeshLink straight through the line is the only way across. The only visible part is
+    /// an arrow on the floor (in placement mode), so you can find the route again and pick it up. Meant for checkout lanes:
+    /// customers no longer walk against the flow past the checkout.
     ///
-    /// Bediening: P = plaatsmodus aan/uit, scrollen = draaien per 15°, Ctrl+scroll = per 5°, Q/E = per 90°, Shift+scroll =
-    /// breedte, linkermuis = neerleggen, rechtermuis op een pijl = oppakken, Delete op een pijl = weghalen. Toetsenhulp in een
-    /// paneel dat gekloond is van het meldingspaneel van het spel (zelfde font, kleur en achtergrond), zie HelpPanel.
-    /// Opslag: BepInEx\config\WalkRoute\WalkRoute_Profile_&lt;saveslot&gt;.json (niet in de save van het spel).
+    /// Controls: P = placement mode on/off, scroll = rotate by 15°, Ctrl+scroll = by 5°, Q/E = by 90°, Shift+scroll =
+    /// width, left mouse = place, right mouse on an arrow = pick up, Delete on an arrow = remove. Key help in a panel
+    /// cloned from the game's notification panel (same font, color and background), see HelpPanel.
+    /// Storage: BepInEx\config\WalkRoute\WalkRoute_Profile_&lt;saveslot&gt;.json (not in the game's save).
     /// </summary>
     [BepInPlugin(GUID, NAME, VERSION)]
     public class WalkRoutePlugin : BaseUnityPlugin
@@ -35,8 +35,8 @@ namespace WalkRoute
         public const string VERSION = "1.0.0";
         private const string GameScene = "GameScenePC";
         private const int FloorLayer = 10;              // RayShooter.FLOOR_LAYER
-        private const float ArrowDepth = 0.5f;          // diepte van de pijl op de vloer (meters)
-        private const float LinkHalfLength = 0.35f;     // link begint/eindigt zo ver vóór en achter de streep (buiten de gecarvde zone)
+        private const float ArrowDepth = 0.5f;          // depth of the arrow on the floor (meters)
+        private const float LinkHalfLength = 0.35f;     // the link starts/ends this far in front of and behind the line (outside the carved zone)
 
         internal static ManualLogSource Log;
         internal static ConfigEntry<KeyCode> ToggleKey, DeleteKey, ReloadKey, ClearAllKey;
@@ -106,7 +106,7 @@ namespace WalkRoute
             Log.LogInfo("Ready: " + placed.Count + " walk route(s) active.");
         }
 
-        // ---------- bediening ----------
+        // ---------- controls ----------
 
         private void Update()
         {
@@ -117,7 +117,7 @@ namespace WalkRoute
             if (!placementMode) return;
 
             if (Input.GetKeyDown(DeleteKey.Value)) TryDelete();
-            if (Input.GetKeyDown(KeyCode.Q)) rotation += 90f;   // geen D: dat is lopen (WASD)
+            if (Input.GetKeyDown(KeyCode.Q)) rotation += 90f;   // not D: that is walking (WASD)
             if (Input.GetKeyDown(KeyCode.E)) rotation -= 90f;
             float scroll = Input.GetAxis("Mouse ScrollWheel");
             if (!Mathf.Approximately(scroll, 0f))
@@ -162,7 +162,7 @@ namespace WalkRoute
             SetPlacedAlpha(placementMode ? EditAlpha.Value : Alpha.Value);
         }
 
-        // ---------- voorbeeld ----------
+        // ---------- preview ----------
 
         private void CreatePreview()
         {
@@ -189,7 +189,7 @@ namespace WalkRoute
             hit = default;
             var cam = Camera.main; if (cam == null) return false;
             var ray = cam.ScreenPointToRay(Input.mousePosition);
-            // eerst de vloer van de winkel, anders elk ander horizontaal vast vlak (buiten, magazijn)
+            // the store floor first, otherwise any other horizontal solid surface (outside, storage room)
             if (Physics.Raycast(ray, out hit, MaxDistance.Value, 1 << FloorLayer, QueryTriggerInteraction.Ignore)) return true;
             if (!Physics.Raycast(ray, out hit, MaxDistance.Value, ~((1 << 2) | (1 << 5)), QueryTriggerInteraction.Ignore)) return false;
             return Vector3.Dot(hit.normal, Vector3.up) > 0.9f;
@@ -206,12 +206,12 @@ namespace WalkRoute
                 if (pr != null && h.distance < bestD) { best = pr; bestD = h.distance; }
             }
             if (best == null) return null;
-            // iets massiefs ervoor (muur, meubel)? dan niet; de vloer zelf ligt 4 mm erachter en telt niet
+            // something solid in front of it (wall, furniture)? then not; the floor itself lies 4 mm behind it and does not count
             if (Physics.Raycast(ray, out var solid, bestD - 0.02f, ~((1 << 2) | (1 << 5)), QueryTriggerInteraction.Ignore)) return null;
             return best;
         }
 
-        // ---------- plaatsen, oppakken, weghalen ----------
+        // ---------- place, pick up, remove ----------
 
         private void TryPlace()
         {
@@ -226,7 +226,7 @@ namespace WalkRoute
         {
             var go = new GameObject("WalkRoute_" + rec.id);
             go.transform.SetPositionAndRotation(new Vector3(rec.X, rec.Y, rec.Z), Quaternion.Euler(0f, rec.RotY, 0f));
-            // pijl op de vloer (zichtbaar deel, ook het oppakvlak)
+            // arrow on the floor (the visible part, also the surface for picking up)
             var arrow = new GameObject("Arrow");
             arrow.transform.SetParent(go.transform, false);
             arrow.transform.localPosition = Vector3.up * 0.004f;
@@ -234,7 +234,7 @@ namespace WalkRoute
             arrow.AddComponent<MeshFilter>().sharedMesh = arrowMesh;
             var mr = arrow.AddComponent<MeshRenderer>(); mr.sharedMaterial = placedMaterial; mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             var bc = arrow.AddComponent<BoxCollider>(); bc.isTrigger = true; bc.center = new Vector3(0f, 0.01f, 0f); bc.size = new Vector3(1f, 0.02f, 1f);
-            // streep dicht op de NavMesh: carving obstacle over de hele breedte (zoals het kind ENTRANCE_GATE van het hekje)
+            // close the line on the NavMesh: carving obstacle across the full width (like the ENTRANCE_GATE child of the gate)
             var obs = go.AddComponent<NavMeshObstacle>();
             obs.shape = NavMeshObstacleShape.Box;
             obs.center = new Vector3(0f, 0.5f, 0f);
@@ -247,7 +247,7 @@ namespace WalkRoute
             return pr;
         }
 
-        /// <summary>Controle in het log: snijdt de streep na anderhalve seconde echt in de NavMesh? (Op de streep mag geen mesh meer liggen.)</summary>
+        /// <summary>Check in the log: after one and a half seconds, does the line really carve the NavMesh? (No mesh may remain on the line.)</summary>
         private IEnumerator CheckCarve(PlacedRoute pr)
         {
             yield return new WaitForSeconds(1.5f);
@@ -303,17 +303,17 @@ namespace WalkRoute
             if (placedMaterial == null) return;
             var c = placedMaterial.color; c.a = Mathf.Clamp01(a); placedMaterial.color = c;
             if (placedMaterial.HasProperty("_BaseColor")) placedMaterial.SetColor("_BaseColor", c);
-            // bij 0 de pijl helemaal niet tekenen; de collider blijft, dus oppakken (in de plaatsmodus) werkt gewoon
+            // at 0, don't draw the arrow at all; the collider stays, so picking up (in placement mode) still works
             bool draw = a > 0.001f;
             foreach (var pr in placed) if (pr != null) foreach (var mr in pr.GetComponentsInChildren<MeshRenderer>(true)) mr.enabled = draw;
         }
 
-        // ---------- mesh, texture, materialen ----------
+        // ---------- mesh, texture, materials ----------
 
         private static void EnsureAssets()
         {
             if (arrowMesh != null) return;
-            // vierkant van 1 x 1 m plat op de vloer, gecentreerd; de pijl wijst naar +z (de richting van de route)
+            // 1 x 1 m square flat on the floor, centered; the arrow points to +z (the direction of the route)
             arrowMesh = new Mesh { name = "WalkRouteArrow" };
             arrowMesh.vertices = new[] { new Vector3(-0.5f, 0f, -0.5f), new Vector3(0.5f, 0f, -0.5f), new Vector3(0.5f, 0f, 0.5f), new Vector3(-0.5f, 0f, 0.5f) };
             arrowMesh.uv = new[] { new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(0f, 1f) };
@@ -346,7 +346,7 @@ namespace WalkRoute
             return m;
         }
 
-        /// <summary>Herhaalbare pijl (chevron) in blauw op een doorzichtige achtergrond; de pijl wijst naar +v (= +z).</summary>
+        /// <summary>Tileable arrow (chevrons) in blue on a transparent background; the arrow points to +v (= +z).</summary>
         private static Texture2D MakeArrowTexture(int size)
         {
             var t = new Texture2D(size, size, TextureFormat.RGBA32, false) { name = "WalkRouteArrowTex" };
@@ -355,16 +355,16 @@ namespace WalkRoute
             for (int y = 0; y < size; y++)
                 for (int x = 0; x < size; x++)
                 {
-                    // v gespiegeld: de armen van de chevron liggen lager dan de punt, zodat de pijl naar +v (= +z, de looprichting) wijst
+                    // v flipped: the arms of the chevron lie lower than the tip, so the arrow points to +v (= +z, the walking direction)
                     float u = (x + 0.5f) / size, v = 1f - (y + 0.5f) / size;
-                    // lichte band over de hele breedte, daarop drie chevrons die naar +v wijzen
+                    // light band across the full width, with three chevrons on top that point to +v
                     Color c = new Color(1f, 1f, 1f, 0.35f);
-                    float ax = Mathf.Abs(u - 0.5f);           // 0 in het midden, 0,5 aan de randen
+                    float ax = Mathf.Abs(u - 0.5f);           // 0 in the middle, 0.5 at the edges
                     for (int k = 0; k < 3; k++)
                     {
-                        float baseV = 0.12f + k * 0.28f;      // onderkant van de chevronpunt in het midden
-                        float tip = baseV + 0.20f;            // punt van de chevron in het midden
-                        float vv = v - ax * 0.35f;            // schuine benen: hoe verder van het midden, hoe lager
+                        float baseV = 0.12f + k * 0.28f;      // bottom of the chevron tip in the middle
+                        float tip = baseV + 0.20f;            // tip of the chevron in the middle
+                        float vv = v - ax * 0.35f;            // slanted legs: the farther from the middle, the lower
                         if (vv > baseV && vv < tip && ax < 0.42f) c = blue;
                         else if (vv > baseV - 0.03f && vv < tip + 0.03f && ax < 0.45f && c.a < 0.9f) c = white;
                     }
@@ -389,9 +389,9 @@ namespace WalkRoute
     }
 
     /// <summary>
-    /// Toetsenhulp in de stijl van het spel: een kloon van het meldingspaneel van het spel (MiddleTooltipUI: achtergrond-Image en
-    /// TextMeshPro-tekst met het font, de kleur en de omlijning van het spel) onder hetzelfde canvas, kleiner en in een hoek.
-    /// Zonder dat paneel (ander spelversie) valt het terug op een eigen donker paneel met de standaard TMP-tekst.
+    /// Key help in the game's style: a clone of the game's notification panel (MiddleTooltipUI: background Image and
+    /// TextMeshPro text with the game's font, color and outline) under the same canvas, smaller and in a corner.
+    /// If that panel cannot be found (for example in another game version), no help panel is shown.
     /// </summary>
     internal static class HelpPanel
     {
@@ -420,7 +420,7 @@ namespace WalkRoute
                 if (tip == null) return false;
                 var canvas = tip.GetComponentInParent<Canvas>();
                 if (canvas == null) return false;
-                // kloon in een uitgeschakelde houder, zodat Awake van de gekloonde MiddleTooltipUI niet draait (singleton)
+                // clone into a disabled holder, so Awake of the cloned MiddleTooltipUI does not run (singleton)
                 root = new GameObject("WalkRouteHelp", typeof(RectTransform));
                 root.transform.SetParent(canvas.transform, false);
                 root.SetActive(false);
@@ -469,7 +469,7 @@ namespace WalkRoute
             lastText = t; lastCorner = corner; lastScale = scale;
             text.fontSize = baseFontSize * 0.5f * scale;
             text.text = t;
-            // paneel op maat van de tekst, in de gekozen hoek
+            // size the panel to the text, in the chosen corner
             Vector2 pref = text.GetPreferredValues(t);
             rect.sizeDelta = new Vector2(pref.x + 44f, pref.y + 28f);
             bool right = corner == WalkRoutePlugin.Corner.TopRight || corner == WalkRoutePlugin.Corner.BottomRight;
@@ -481,9 +481,9 @@ namespace WalkRoute
     }
 
     /// <summary>
-    /// Een geplaatste looproute: houdt de eenrichtingslink op de NavMesh bij (zoals de NavMeshLink op het kind Obstacle van het
-    /// klaphekje: start 0,33 m vóór de streep, einde 0,34 m erachter, bidirectional = false, gebied Walkable, agenttype 0).
-    /// Gemaakt met NavMesh.AddLink, zodat Unity.AI.Navigation.dll niet nodig is; bij weghalen wordt de link verwijderd.
+    /// A placed walk route: maintains the one-way link on the NavMesh (like the NavMeshLink on the Obstacle child of the
+    /// entrance gate: start 0.33 m in front of the line, end 0.34 m behind it, bidirectional = false, area Walkable, agent type 0).
+    /// Created with NavMesh.AddLink, so Unity.AI.Navigation.dll is not needed; the link is removed together with the route.
     /// </summary>
     public class PlacedRoute : MonoBehaviour
     {
@@ -521,7 +521,7 @@ namespace WalkRoute
         private void OnDestroy() { RemoveLink(); }
     }
 
-    /// <summary>JSON per save-slot in BepInEx\config\WalkRoute\WalkRoute_Profile_&lt;n&gt;.json.</summary>
+    /// <summary>JSON per save slot in BepInEx\config\WalkRoute\WalkRoute_Profile_&lt;n&gt;.json.</summary>
     public static class SaveStore
     {
         [Serializable]
