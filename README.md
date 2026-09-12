@@ -104,3 +104,9 @@ After a successful build, `WalkRoute.dll` is copied to `BepInEx\plugins\WalkRout
 ## License
 
 MIT License, Copyright (c) 2026 Eyonator. See [LICENSE](LICENSE).
+
+## Support
+
+Walk Route is free. If you enjoy it and want to say thanks, you can [buy me a coffee via PayPal](https://paypal.me/vinnies88). Donations are always optional, never required.
+
+[![Support the creator via PayPal](images/paypal-donation-banner.png)](https://paypal.me/vinnies88)
