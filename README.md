@@ -15,7 +15,7 @@ It works the same way as the game's own entrance gate, just without the gate, an
 
 ## Installation
 
-Download `WalkRoute-<version>.zip` from the Releases page and extract it into the game folder (the folder with `Megastore Simulator.exe`), so you end up with `BepInEx\plugins\WalkRoute\WalkRoute.dll`.
+Download `WalkRoute-<version>.zip` from [Nexus Mods](https://www.nexusmods.com/megastoresimulator/mods/336) or the [Releases page](https://github.com/Eyonator/MS-WalkRoute/releases) and extract it into the game folder (the folder with `Megastore Simulator.exe`), so you end up with `BepInEx\plugins\WalkRoute\WalkRoute.dll`.
 
 ## Controls
 
