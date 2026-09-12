@@ -32,7 +32,7 @@ namespace WalkRoute
     {
         public const string GUID = "eyonator.megastore.walkroute";
         public const string NAME = "Walk Route";
-        public const string VERSION = "1.0.0";
+        public const string VERSION = "1.0.1";
         private const string GameScene = "GameScenePC";
         private const int FloorLayer = 10;              // RayShooter.FLOOR_LAYER
         private const float ArrowDepth = 0.5f;          // depth of the arrow on the floor (meters)

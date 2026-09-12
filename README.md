@@ -1,6 +1,6 @@
-# Walk Route for Megastore Simulator
+![Walk Route](images/banner.png)
 
-![Walk Route](images/thumbnail.png)
+# Walk Route for Megastore Simulator
 
 One-way walking lines for Megastore Simulator. Place a line on the floor and customers can only cross it in the direction of the arrow. Made for checkout lanes, so customers stop walking against the flow past the registers.
 
@@ -98,6 +98,7 @@ After a successful build, `WalkRoute.dll` is copied to `BepInEx\plugins\WalkRout
 
 ## Changelog
 
+- 1.0.1: Code comments in English and a banner in the README. No changes in how the mod works.
 - 1.0.0: First release.
 
 ## License
