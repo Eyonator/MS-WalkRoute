@@ -10,8 +10,8 @@ It works the same way as the game's own entrance gate, just without the gate, an
 
 ## Requirements
 
-- Tobey's BepInEx Pack for Megastore Simulator (BepInEx 5)
-- Optional: BepInEx Configuration Manager, to change the settings in game (F1)
+- [Tobey's BepInEx Pack for Megastore Simulator](https://www.nexusmods.com/megastoresimulator/mods/2) (BepInEx 5)
+- Optional: [Configuration Manager](https://www.nexusmods.com/megastoresimulator/mods/7), to change the settings in game (F1)
 
 ## Installation
 
